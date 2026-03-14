@@ -24,11 +24,12 @@ services:
       - database
     networks:
       - laravel_network
-  volumes:
-      mysql-data:
-      mysql-conf:
-      laravel-data:
-      nginx-conf:
+      
+volumes:
+  mysql-data:
+  mysql-conf:
+  laravel-data:
+  nginx-conf:
       
 networks:
   laravel_network:
