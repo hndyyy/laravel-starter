@@ -1,0 +1,78 @@
+# Perubahan yang Dibuat
+
+## Eksekusi: Run ke-2 (Verifikasi)
+
+File middleware `app/Http/Middleware/ContentSecurityPolicy.php` sudah ada dan telah diverifikasi.
+
+## 1. Analisa Aset di Views
+
+Telah dilakukan analisa terhadap aset yang digunakan di seluruh views aplikasi:
+
+### Aset Internal:
+- **Vite Assets**: 
+  - resources/css/app-frontend.css
+  - resources/js/app-frontend.js
+  - resources/sass/app-backend.scss
+  - resources/js/app-backend.js
+- **jQuery**: vendor/jquery/jquery-3.6.4.min.js
+- **Favicon**: img/favicon.png
+
+### Aset Eksternal (CDN):
+- **Google Fonts**: fonts.googleapis.com, fonts.gstatic.com
+- **Google Analytics**: www.googletagmanager.com, www.google-analytics.com
+
+### Views yang Dianalisa:
+- resources/views/layouts/app.blade.php (Frontend Layout)
+- resources/views/layouts/guest.blade.php (Guest Layout)
+- resources/views/frontend/layouts/app.blade.php (Frontend Public Layout)
+- resources/views/backend/layouts/app.blade.php (Backend Admin Layout)
+
+## 2. Middleware ContentSecurityPolicy
+
+File middleware: `app/Http/Middleware/ContentSecurityPolicy.php` ✅ (Sudah Ada)
+
+### Fitur Middleware:
+1. **Nonce Generation**: Menghasilkan nonce unik untuk setiap request yang dapat digunakan untuk inline scripts dan styles
+2. **CSP Directives**:
+   - `default-src 'self'`: Hanya mengizinkan resource dari origin yang sama
+   - `script-src`: Mengizinkan scripts dari self, nonce, dan Google Analytics
+   - `style-src`: Mengizinkan styles dari self, nonce, unsafe-inline (untuk compatibility), dan Google Fonts
+   - `font-src`: Mengizinkan fonts dari self, data URIs, dan Google Fonts
+   - `img-src`: Mengizinkan gambar dari self, data URIs, dan https sources
+   - `connect-src`: Mengizinkan koneksi ke self dan Google Analytics
+   - `frame-src`: Hanya mengizinkan iframe dari self
+   - `object-src 'none'`: Melarang plugin objects
+   - `base-uri 'self'`: Membatasi base URI
+   - `form-action 'self'`: Membatasi form submissions
+   - `frame-ancestors 'self'`: Mencegah clickjacking
+   - `upgrade-insecure-requests`: Otomatis upgrade HTTP ke HTTPS
+
+3. **Additional Security Headers**:
+   - `X-Content-Type-Options: nosniff`: Mencegah MIME type sniffing
+   - `X-Frame-Options: SAMEORIGIN`: Mencegah clickjacking
+   - `X-XSS-Protection: 1; mode=block`: Mengaktifkan XSS filter browser
+   - `Referrer-Policy: strict-origin-when-cross-origin`: Mengontrol referrer information
+   - `Permissions-Policy`: Menonaktifkan geolocation, microphone, dan camera
+
+### Cara Penggunaan:
+Middleware ini perlu didaftarkan di `app/Http/Kernel.php` atau `bootstrap/app.php` (Laravel 11+).
+
+Nonce dapat diakses di views dengan:
+```php
+$nonce = request()->attributes->get('csp_nonce');
+```
+
+Dan digunakan pada inline scripts/styles:
+```html
+<script nonce="{{ $nonce }}">...</script>
+<style nonce="{{ $nonce }}">...</style>
+```
+
+### Catatan:
+- Backend layout sudah mengimplementasikan penggunaan nonce
+- Frontend layouts perlu diupdate untuk menggunakan nonce jika ada inline scripts/styles
+- CSP sudah disesuaikan dengan kebutuhan aplikasi berdasarkan analisa aset
+
+---
+
+**Status**: File middleware telah diverifikasi dan siap untuk deployment.

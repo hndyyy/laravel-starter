@@ -1,0 +1,36 @@
+services:
+  database:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: laravel
+      MYSQL_DATABASE: laravel
+    ports:
+      - "3306:3306"
+    networks:
+      - laravel_network
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - mysql-conf:/etc/mysql
+
+  app:
+    image: laravel:test
+    ports:
+      - "8080:80"
+    volumes:
+      - laravel-data:/var/www/html
+      - nginx-conf:/etc/nginx/http.d
+    depends_on:
+      - database
+    networks:
+      - laravel_network
+
+networks:
+  laravel_network:
+    driver: bridge
+
+volumes:
+  laravel-data:
+  nginx-conf:
+  mysql-data:
+  mysql-conf:
