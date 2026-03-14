@@ -23,8 +23,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          # Menggunakan hash commit pendek sebagai tag
-          TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          TAG="v1.0.${{ github.run_number }}"
           IMAGE_NAME=${{ vars.IMAGE_NAME }}
           
           docker build -t $IMAGE_NAME:$TAG .
@@ -40,7 +39,7 @@ jobs:
         
       - name: Init Variable
         run: |
-          TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          TAG="v1.0.${{ github.run_number }}"
           FULL_IMAGE="${{ vars.IMAGE_NAME }}:$TAG"
 
           IMAGE_NAME_WITH_TAG=$FULL_IMAGE docker-compose up -d
