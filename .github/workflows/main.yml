@@ -23,7 +23,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          IMG_NAME="${{ vars.IMAGE_NAME }}"
+          IMG_NAME="ghcr.io/${{ github.repository_owner }}/laravel-app"
           TAG="v1.0.${{ github.run_number }}"
           
           echo "Building image: $IMG_NAME with tag $TAG"
@@ -42,7 +42,7 @@ jobs:
       - name: Start Application and Health Check
         run: |
           TAG="v1.0.${{ github.run_number }}"
-          IMG_NAME="${{ vars.IMAGE_NAME }}"
+          IMG_NAME="ghcr.io/${{ github.repository_owner }}/laravel-app"
           
           IMAGE_NAME_WITH_TAG="$IMG_NAME:$TAG" docker-compose up -d
           
@@ -84,7 +84,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          IMG_NAME="${{ vars.IMAGE_NAME }}"
+          IMG_NAME="ghcr.io/${{ github.repository_owner }}/laravel-app"
           
           docker build -t $IMG_NAME:${{ env.RELEASE_TAG }} -t $IMG_NAME:latest .
           docker push $IMG_NAME:${{ env.RELEASE_TAG }}
