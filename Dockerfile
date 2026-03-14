@@ -12,6 +12,6 @@ COPY .env.example /var/www/html/.env
 WORKDIR /var/www/html
 RUN composer install
 RUN php artisan key:generate
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R nginx:nginx /var/www/html/storage /var/www/html/bootstrap/cache
 
 CMD nginx -g 'daemon off;'
