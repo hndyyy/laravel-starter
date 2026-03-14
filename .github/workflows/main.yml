@@ -1,0 +1,110 @@
+name: CI/CD Pipeline Laravel
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build Stage
+    runs-on: ubuntu
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        run: |
+          # Menggunakan hash commit pendek sebagai tag
+          TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          IMAGE_NAME=${{ vars.IMAGE_NAME }}
+          
+          docker build -t $IMAGE_NAME:$TAG .
+          docker push $IMAGE_NAME:$TAG
+          
+  test:
+    name: Test Stage
+    runs-on: ubuntu
+    needs: build
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Init Variable
+        run: |
+          TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          FULL_IMAGE="${{ vars.IMAGE_NAME }}:$TAG"
+
+          IMAGE_NAME_WITH_TAG=$FULL_IMAGE docker-compose up -d
+          
+      - name: Start Application
+        run: |
+          docker-compose up -d
+          sleep 15 
+
+      - name: Run Curl Health Check
+        run: |
+          curl -f http://localhost:8080 || exit 1
+
+      - name: Stop Application
+        run: docker-compose down app
+
+  release:
+    name: Release Stage
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Create Git Tag
+        run: |
+          TAG_NAME="v1.0.${{ github.run_number }}"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+          echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME=${{ vars.IMAGE_NAME }}
+          docker build -t $IMAGE_NAME:${{ env.RELEASE_TAG }} -t $IMAGE_NAME:latest .
+          docker push $IMAGE_NAME:${{ env.RELEASE_TAG }}
+          docker push $IMAGE_NAME:latest
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Release ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+
+  deploy:
+    name: Deploy Stage
+    runs-on: ubuntu-latest
+    needs: release
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    steps:
+      - name: Deploy to Server
+        run: |
+          docker compose up -d
